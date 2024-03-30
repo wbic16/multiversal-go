@@ -1,0 +1,57 @@
+<html>
+<head>
+    <title>Multiversal Go</title>
+<style type="text/css">
+    .cell {
+        width: 64px;
+        height: 64px;
+        border: 3px black solid;
+        border-radius: 6px;
+        float: left;
+    }
+    br {
+        clear: both;
+    }
+</style>
+</head>
+<body>
+    <div id="board">
+        
+    </div>
+<script type="text/javascript">
+var template = `xxxxxxxxxxxxxxxxxxx
+xxxxxxxxxxxxxxxxxxx
+xxxxxxxxxxxxxxxxxxx
+xxxxxxxxxxxxxxxxxxx
+xxxxxxxxxxxxxxxxxxx
+xxxxxxxxxxxxxxxxxxx
+xxxxxxxxxxxxxxxxxxx
+xxxxxxxxxxxxxxxxxxx
+xxxxxxxxxxxxxxxxxxx
+xxxxxxxxxxxxxxxxxxx
+xxxxxxxxxxxxxxxxxxx
+xxxxxxxxxxxxxxxxxxx
+xxxxxxxxxxxxxxxxxxx
+xxxxxxxxxxxxxxxxxxx
+xxxxxxxxxxxxxxxxxxx
+xxxxxxxxxxxxxxxxxxx
+xxxxxxxxxxxxxxxxxxx
+xxxxxxxxxxxxxxxxxxx
+xxxxxxxxxxxxxxxxxxx`;
+var output = "";
+var x = 1;
+var y = 1;
+for (var i = 0; i < template.length; ++i) {
+  if (template.charAt(i) == 'x') {
+    output += "<div id='cell_" + x + "_" + y + "' class='cell'></div>\n";
+    ++x;
+  } else {
+    output += "<br />";
+    x = 1;
+    ++y;
+  }
+}
+document.getElementById("board").innerHTML = output;
+</script>
+</body>
+</html>
