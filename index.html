@@ -265,7 +265,29 @@ function reviewNeighbor(x, y, z) {
       ++liberties;
     }
   }
+  if (x < boardSize) {
+    const eastIndex = coordinatesToIndex(x+1, y, z);
+    const eastState = gameState[eastIndex];
+    if (eastState == 'x') {
+      ++liberties;
+    }
+  }
+  if (y > 1) {
+    const northIndex = coordinatesToIndex(x, y-1, z);
+    const northState = gameState[northIndex];
+    if (northState == 'x') {
+      ++liberties;
+    }
+  }
+  if (y < boardSize) {
+    const southIndex = coordinatesToIndex(x, y+1, z);
+    const southState = gameState[southIndex];
+    if (southState == 'x') {
+      ++liberties;
+    }
+  }
 
+  console.log("Review for x=" + x + ", y=" + y + ", z=" + z + ": state=" + state + ", liberties=" + liberties);
   return state;
 }
 
