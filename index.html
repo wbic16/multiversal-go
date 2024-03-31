@@ -5,6 +5,7 @@
     body {
         color: white;
         background-color: black;
+        font-family: Arial, Helvetica, sans-serif;
     }
     #board {
         margin: 0 auto;
@@ -60,8 +61,6 @@
     br {
         clear: both;
     }
-    hr {
-    }
 </style>
 </head>
 <body>
@@ -71,6 +70,7 @@
         <select id="action">
             <option value="0">normal</option>
             <option value="1">scroll break</option>
+            <option value="2">neighbors</option>
         </select>
     </div>
 <script type="text/javascript">
@@ -79,6 +79,7 @@ function dgid(id) {
   return document.getElementById(id);
 }
 
+const DEBUG = true; // false;
 const boardSize = 9;
 const boardN2 = boardSize * boardSize;
 var gameState = "";
@@ -151,10 +152,17 @@ function getWarpPoint(index) {
 }
 
 // -----------------------------------------------------------------------------------------------------------
+// @fn coordinatesToIndex
+// -----------------------------------------------------------------------------------------------------------
+function coordinatesToIndex(x, y, z) {
+  return boardN2 * (z-1) + boardSize * (y-1) + x - 1;
+}
+
+// -----------------------------------------------------------------------------------------------------------
 // setStone
 // -----------------------------------------------------------------------------------------------------------
 function setStone(x, y, z) {  
-  const index = boardN2 * (z-1) + boardSize * (y-1) + x - 1;
+  const index = coordinatesToIndex(x, y, z);
   if (index < 0 || index >= gameState.length) {
     console.log("bad bonk here");
     return;
@@ -167,13 +175,98 @@ function setStone(x, y, z) {
 
   turn = (turn == 'black') ? 'white' : 'black';
   render();
+
+  if (action.value == '2') {
+    if (x > 1) {
+      const nx = x - 1;
+      styleNAVBeacon(nx, y, z, "west");
+    }
+
+    if (x < boardSize) {
+      const nx = x + 1;
+      styleNAVBeacon(nx, y, z, "east");
+    }
+
+    if (y > 1) {
+      const ny = y - 1;
+      styleNAVBeacon(x, ny, z, "north");
+    }
+
+    if (y < boardSize) {
+      const ny = y + 1;
+      styleNAVBeacon(x, ny, z, "south");
+    }
+  }
+}
+
+// -----------------------------------------------------------------------------------------------------------
+// @fn styleNAVBeacon
+//
+// Decorates neighboring tiles (used for debugging)
+// -----------------------------------------------------------------------------------------------------------
+function styleNAVBeacon(x, y, z, label) {
+  if (DEBUG) {
+    var cell = dgid("cell_" + x + "_" + y + "_" + z);
+    cell.innerHTML = label;
+    cell.style.color = "black";
+    cell.style.textAlign = "center";
+    cell.style.fontWeight = "bold";
+  }
 }
 
 // -----------------------------------------------------------------------------------------------------------
 // @fn handleCaptures
 // -----------------------------------------------------------------------------------------------------------
 function handleCaptures(x, y, z) {
+  if (DEBUG) {
+    console.log("Reviewing Board #" + z);
+  }
+  
+  const index = coordinatesToIndex(x, y, z);
 
+  if (x > 1) {
+    const nx = x - 1;
+    const westIndex = coordinatesToIndex(nx, y, z);
+    reviewNeighbor(nx, y, z);
+  }
+
+  if (x < boardSize) {
+    const nx = x + 1;
+    const eastIndex = coordinatesToIndex(nx, y, z);
+    reviewNeighbor(nx, y, z);
+  }
+
+  if (y > 1) {
+    const ny = y - 1;
+    const northIndex = coordinatesToIndex(x, ny, z);
+    reviewNeighbor(x, ny, z);
+  }
+
+  if (y < boardSize) {
+    const ny = y + 1;
+    const southIndex = coordinatesToIndex(x, ny, z);
+    reviewNeighbor(x, ny, z);
+  }
+}
+
+// -----------------------------------------------------------------------------------------------------------
+// @fn reviewNeighbor
+// -----------------------------------------------------------------------------------------------------------
+function reviewNeighbor(x, y, z) {
+  const index = coordinatesToIndex(x, y, z);
+  const state = gameState[index];
+  if (state == 'x') { return; }
+  
+  var liberties = 0;
+  if (x > 1) {
+    const westIndex = coordinatesToIndex(x-1, y, z);
+    const westState = gameState[westIndex];
+    if (westState == 'x') {
+      ++liberties;
+    }
+  }
+
+  return state;
 }
 
 render();
