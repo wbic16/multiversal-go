@@ -159,20 +159,25 @@ function coordinatesToIndex(x, y, z) {
 }
 
 // -----------------------------------------------------------------------------------------------------------
-// setStone
+// @fn forceCell
 // -----------------------------------------------------------------------------------------------------------
-function setStone(x, y, z) {  
+function forceCell(state, x, y, z) {
   const index = coordinatesToIndex(x, y, z);
   if (index < 0 || index >= gameState.length) {
     console.log("bad bonk here");
     return;
   }
+  
+  gameState = gameState.substring(0, index) + state + gameState.substring(index+1);
+}
 
+// -----------------------------------------------------------------------------------------------------------
+// setStone
+// -----------------------------------------------------------------------------------------------------------
+function setStone(x, y, z) {
   const replacement = turn[0] + (action.value == '1' ? SCROLL_BREAK : '');
-  gameState = gameState.substring(0, index) + replacement + gameState.substring(index+1);
-
+  forceCell(replacement, x, y, z);
   handleCaptures(x, y, z);
-
   turn = (turn == 'black') ? 'white' : 'black';
   render();
 
@@ -217,9 +222,27 @@ function styleNAVBeacon(x, y, z, label) {
 // -----------------------------------------------------------------------------------------------------------
 // @fn handleCaptures
 // -----------------------------------------------------------------------------------------------------------
+var groups = Array();
+var action = new Audio("action.mp3");
 function handleCaptures(x, y, z) {
   if (DEBUG) {
     console.log("Reviewing Board #" + z);
+  }
+  groups = Array();
+
+  for (var i = 1; i <= boardSize; ++i) {
+    for (var j = 1; j <= boardSize; ++j) {
+      const inspect = coordinatesToIndex(i, j, z);
+      const liberties = reviewNeighbor(i, j, z);
+      const state = gameState[inspect];
+      if (state != 'x' && liberties == 0) {
+        console.log("capturing " + state);
+        if (x != i && y != j) {
+          forceCell('x', i, j, z);
+          action.play();
+        }
+      }
+    }
   }
   
   const index = coordinatesToIndex(x, y, z);
@@ -255,7 +278,7 @@ function handleCaptures(x, y, z) {
 function reviewNeighbor(x, y, z) {
   const index = coordinatesToIndex(x, y, z);
   const state = gameState[index];
-  if (state == 'x') { return; }
+  if (state == 'x') { return 0; }
   
   var liberties = 0;
   if (x > 1) {
@@ -287,8 +310,8 @@ function reviewNeighbor(x, y, z) {
     }
   }
 
-  console.log("Review for x=" + x + ", y=" + y + ", z=" + z + ": state=" + state + ", liberties=" + liberties);
-  return state;
+  //console.log("Review for x=" + x + ", y=" + y + ", z=" + z + ": state=" + state + ", liberties=" + liberties);
+  return liberties;
 }
 
 render();
