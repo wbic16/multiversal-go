@@ -19,6 +19,12 @@
         border: 3px solid grey;
         font-size: 3em;
     }
+    #groupCounter {
+      position: absolute;
+      bottom: 10px;
+      left: 10px;
+      width: 100px;
+    }
     .cell {
         width: 64px;
         height: 64px;
@@ -72,13 +78,14 @@
             <option value="1">scroll break</option>
             <option value="2">neighbors</option>
         </select>
+        <div id="groupCounter"></div>
     </div>
 <script type="text/javascript">
 // -----------------------------------------------------------------------------------------------------------
 function dgid(id) {
   return document.getElementById(id);
 }
-
+const BASE81 = "0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ)!@#$%^&*(-=_+[]{}/"
 const DEBUG = true; // false;
 const boardSize = 9;
 const boardN2 = boardSize * boardSize;
@@ -172,6 +179,53 @@ function forceCell(state, x, y, z) {
 }
 
 // -----------------------------------------------------------------------------------------------------------
+// @fn forceScan
+// -----------------------------------------------------------------------------------------------------------
+function forceScan(state, x, y, z) {
+  const index = coordinatesToIndex(x, y, z);
+  if (index < 0 || index >= gameState.length) {
+    console.log("bad bonk here");
+    return;
+  }
+
+  const compare = gameState[index];
+  if (x > 1) {
+    const westIndex = coordinatesToIndex(x-1, y, z);
+    const test = gameState[westIndex];
+    if (compare == test && scanState[westIndex] == '0') {
+      forceScan(state, x-1, y, z);
+    }
+  }
+
+  if (y > 1) {
+    const northIndex = coordinatesToIndex(x, y-1, z);
+    const test = gameState[northIndex];
+    if (compare == test && scanState[northIndex] == '0') {
+      forceScan(state, x, y-1, z);
+    }
+  }
+
+  if (x < boardSize) {
+    const eastIndex = coordinatesToIndex(x+1, y, z);    
+    const test = gameState[eastIndex];
+    if (compare == test && scanState[eastIndex] == '0') {
+      forceScan(state, x+1, y, z);
+    }
+  }
+
+  if (y < boardSize) {
+    const southIndex = coordinatesToIndex(x, y+1, z);
+    const test = gameState[southIndex];
+    if (compare == test && scanState[southIndex] == '0') {
+      forceScan(state, x, y+1, z);
+    }
+  }
+
+  const glyph = BASE81[state % 81];
+  scanState = scanState.substring(0, index) + glyph + scanState.substring(index+1);
+}
+
+// -----------------------------------------------------------------------------------------------------------
 // setStone
 // -----------------------------------------------------------------------------------------------------------
 function setStone(x, y, z) {
@@ -222,54 +276,70 @@ function styleNAVBeacon(x, y, z, label) {
 // -----------------------------------------------------------------------------------------------------------
 // @fn handleCaptures
 // -----------------------------------------------------------------------------------------------------------
+var groupCounter = 0;
 var groups = Array();
+var groupLiberties = Array();
+var scanState = "";
 var action = new Audio("action.mp3");
 function handleCaptures(x, y, z) {
   if (DEBUG) {
     console.log("Reviewing Board #" + z);
   }
   groups = Array();
-
-  for (var i = 1; i <= boardSize; ++i) {
-    for (var j = 1; j <= boardSize; ++j) {
+  scanState = gameState.replaceAll("x", "0");
+  var group = 1;
+  groupCounter = 0;
+  for (var j = 1; j <= boardSize; ++j) {
+    for (var i = 1; i <= boardSize; ++i) {
       const inspect = coordinatesToIndex(i, j, z);
       const liberties = reviewNeighbor(i, j, z);
-      const state = gameState[inspect];
-      if (state != 'x' && liberties == 0) {
-        console.log("capturing " + state);
-        if (x != i && y != j) {
-          forceCell('x', i, j, z);
-          action.play();
+      const stone = gameState[inspect];
+      var scan = scanState[inspect];
+      var propagate = false;
+
+      if (stone == 'x') {
+        group = 0;
+      }
+
+      if (i > 1) {
+        const ni = i - 1;
+        const westIndex = coordinatesToIndex(ni, j, z);
+        const westStone = gameState[westIndex];
+        const westScan = scanState[westIndex];
+        if (westScan != 0 && westStone == stone) {
+          scan = westScan;
+          propagate = true;
+          group = scan;
         }
+      }
+
+      if (y > 1) {
+        const nj = j - 1;
+        const northIndex = coordinatesToIndex(i, nj, z);
+        const northStone = gameState[northIndex];
+        const northScan = scanState[northIndex];
+        if (northScan != 0 && northStone == stone) {
+          scan = northScan;
+          propagate = true;
+          group = scan;
+        }
+      }
+
+      if (stone != 'x') {
+        if (propagate == false && groups[group] != scan) {
+          ++groupCounter;
+          group = groupCounter;
+        }
+        forceScan(group, i, j, z);
+      }
+      if (!groups[group]) {
+        groups[group] = scan;
       }
     }
   }
-  
-  const index = coordinatesToIndex(x, y, z);
 
-  if (x > 1) {
-    const nx = x - 1;
-    const westIndex = coordinatesToIndex(nx, y, z);
-    reviewNeighbor(nx, y, z);
-  }
-
-  if (x < boardSize) {
-    const nx = x + 1;
-    const eastIndex = coordinatesToIndex(nx, y, z);
-    reviewNeighbor(nx, y, z);
-  }
-
-  if (y > 1) {
-    const ny = y - 1;
-    const northIndex = coordinatesToIndex(x, ny, z);
-    reviewNeighbor(x, ny, z);
-  }
-
-  if (y < boardSize) {
-    const ny = y + 1;
-    const southIndex = coordinatesToIndex(x, ny, z);
-    reviewNeighbor(x, ny, z);
-  }
+  var gch = dgid("groupCounter");
+  gch.innerHTML = "Groups: " + groupCounter;
 }
 
 // -----------------------------------------------------------------------------------------------------------
