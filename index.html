@@ -173,19 +173,22 @@ function forceCell(state, x, y, z) {
 //
 // Revises `scanState` to mark all neighbors of (x, y, z) that match our stone type.
 // -----------------------------------------------------------------------------------------------------------
-function forceScan(state, x, y, z) {
+function forceScan(state, x, y, z, ancestorLiberties) {  
   const index = coordinatesToIndex(x, y, z);
   if (index < 0 || index >= gameState.length) {
     console.log("bad bonk here");
-    return;
+    return 0;
   }
 
+  var liberties = ancestorLiberties;
   const compare = gameState[index];
   if (x > 1) {
     const westIndex = coordinatesToIndex(x-1, y, z);
     const test = gameState[westIndex];
     if (compare == test && scanState[westIndex] == '0') {
-      forceScan(state, x-1, y, z);
+      liberties = forceScan(state, x-1, y, z, liberties);
+    } else if (test == 'x') {
+      ++liberties;
     }
   }
 
@@ -193,7 +196,9 @@ function forceScan(state, x, y, z) {
     const northIndex = coordinatesToIndex(x, y-1, z);
     const test = gameState[northIndex];
     if (compare == test && scanState[northIndex] == '0') {
-      forceScan(state, x, y-1, z);
+      liberties = forceScan(state, x, y-1, z, liberties);
+    } else if (test == 'x') {
+      ++liberties;
     }
   }
 
@@ -201,7 +206,9 @@ function forceScan(state, x, y, z) {
     const eastIndex = coordinatesToIndex(x+1, y, z);    
     const test = gameState[eastIndex];
     if (compare == test && scanState[eastIndex] == '0') {
-      forceScan(state, x+1, y, z);
+      liberties = forceScan(state, x+1, y, z, liberties);
+    } else if (test == 'x') {
+      ++liberties;
     }
   }
 
@@ -209,12 +216,16 @@ function forceScan(state, x, y, z) {
     const southIndex = coordinatesToIndex(x, y+1, z);
     const test = gameState[southIndex];
     if (compare == test && scanState[southIndex] == '0') {
-      forceScan(state, x, y+1, z);
+      liberties = forceScan(state, x, y+1, z, liberties);
+    } else if (test == 'x') {
+      ++liberties;
     }
   }
 
   const glyph = BASE81[state % 81];
   scanState = scanState.substring(0, index) + glyph + scanState.substring(index+1);
+
+  return liberties;
 }
 
 // -----------------------------------------------------------------------------------------------------------
@@ -326,7 +337,8 @@ function handleCaptures(x, y, z) {
           ++groupCounter;
           group = groupCounter;
         }
-        forceScan(group, i, j, z);
+        const scannedLiberties = forceScan(group, i, j, z, 0);
+        console.log("(" + i + "," + j + "): " + scannedLiberties);
       }
       if (!groups[group]) {
         groups[group] = scan;
@@ -336,6 +348,15 @@ function handleCaptures(x, y, z) {
 
   var gch = dgid("groupCounter");
   gch.innerHTML = "Groups: " + groupCounter;
+}
+
+// -----------------------------------------------------------------------------------------------------------
+// @fn occurrences
+//
+// Counts the number of times the `group` character appears in `scanState`
+// -----------------------------------------------------------------------------------------------------------
+function occurrences(group) {
+  return scanState.split(group).length - 1;
 }
 
 // -----------------------------------------------------------------------------------------------------------
