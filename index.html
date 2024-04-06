@@ -297,6 +297,7 @@ function handleCaptures(x, y, z) {
   var group = 1;
   groupCounter = 0;
   var captureStatus = "";
+  var libertyDetail = "";
   for (var j = 1; j <= boardSize; ++j) {
     for (var i = 1; i <= boardSize; ++i) {
       const inspect = coordinatesToIndex(i, j, z);
@@ -339,7 +340,7 @@ function handleCaptures(x, y, z) {
           group = groupCounter;
         }
         const scannedLiberties = forceScan(group, i, j, z, 0);
-        captureStatus += "<div>(" + i + "," + j + "): " + scannedLiberties + "</div>\n";
+        libertyDetail += "<div>(" + i + "," + j + "): " + scannedLiberties + "</div>\n";
       }
       if (!groups[group]) {
         groups[group] = scan;
@@ -349,8 +350,9 @@ function handleCaptures(x, y, z) {
 
   var gch = dgid("groupCounter");
   for (var i = 1; i < groups.length; ++i) {
-    captureStatus += "<div>Group " + BASE81[i] + ": " + occurrences(BASE81[i]) + " (" + groups[i] + ")</div>";
+    captureStatus += "<div>Group " + BASE81[i] + ": " + occurrences(BASE81[i]) + " (" + groups[i] + ")</div>\n";
   }
+  captureStatus += libertyDetail;
   gch.innerHTML = "Groups: " + groupCounter + captureStatus;
 }
 
